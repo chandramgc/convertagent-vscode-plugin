@@ -83,13 +83,12 @@ You are an expert TAL programmer tasked with documenting existing TAL code. Anal
 This extension contributes the following settings:
 
 * `convertagent.customPrompt`: The custom prompt that will be injected before the user's query
-* `convertagent.preferredModel`: The preferred language model to use (Claude 3.7 or Default)
+* `convertagent.preferredModel`: The preferred language model to use (GPT-4o or Default)
 
 ## Release Notes
 
 ### 0.0.2
 
-- Added support for Claude 3.7 language model
 - Added model selection preference in settings
 - Improved error handling for model requests
 - Added logging of available models for debugging
@@ -105,6 +104,5 @@ This extension contributes the following settings:
 
 - May not work correctly with long files due to token limitations in language models
 - Only tested with VS Code 1.100.0 and above
-- Claude 3.7 model availability depends on your VS Code environment configuration
 
 **Enjoy!**

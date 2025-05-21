@@ -61,11 +61,10 @@ export function activate(context: vscode.ExtensionContext) {
 						vendor: 'copilot',
 						family: 'gpt-4o' 
 					});
-					
-					// If GPT-4o is available, use it
+							// If GPT-4o is available, use it
 					if (gpt4oModels.length > 0) {
 						const gpt4oModel = gpt4oModels[0];
-						stream.markdown(`Using ${gpt4oModel.name} model...`);
+                        stream.markdown(`Using ${gpt4oModel.name} model...\n`);
 						
 						const chatResponse = await gpt4oModel.sendRequest(messages, {}, token);
 						
