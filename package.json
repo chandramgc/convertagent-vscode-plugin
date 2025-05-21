@@ -1,0 +1,80 @@
+{
+  "name": "convertagent",
+  "displayName": "ConvertAgent",
+  "description": "Custom chat participant for GitHub Copilot that modifies prompts",
+  "version": "0.0.4",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onChatParticipant:convertagent.convertagent"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "convertagent.activate",
+        "title": "ConvertAgent: Activate Chat Participant"
+      }
+    ],
+    "configuration": {
+      "title": "ConvertAgent",
+      "properties": {
+        "convertagent.customPrompt": {
+          "type": "string",
+          "default": "You are an expert TAL programmer tasked with documenting existing TAL code. Analyze the provided code and insert clear, concise inline comments before relevant lines or blocks to explain their purpose. Focus on clarity and accuracy. Do not add comments at the end of lines. Output the complete documented code strictly within a code block. Do not include any text outside this block.",
+          "description": "The custom prompt to use for the convertagent participant"
+        },
+        "convertagent.preferredModel": {
+          "type": "string",
+          "enum": ["GPT-4o", "Default", "Any Available"],
+          "default": "GPT-4o",
+          "description": "The preferred language model to use for responses. Choose 'GPT-4o' to use Copilot's GPT-4o model, 'Default' to use VS Code's default model, or 'Any Available' to use the first available model."
+        },
+        "convertagent.fallbackMethod": {
+          "type": "string", 
+          "enum": ["Direct", "Generic Chat", "None"],
+          "default": "Generic Chat",
+          "description": "Method to use if preferred model is unavailable. 'Direct' attempts to use the default model with modified settings, 'Generic Chat' sends the query to the main VS Code chat, and 'None' disables fallbacks."
+        }
+      }
+    },
+    "chatParticipants": [
+      {
+        "id": "convertagent.convertagent",
+        "name": "convertagent",
+        "fullName": "ConvertAgent",
+        "description": "Enhances Copilot with custom prompts using GPT-4o",
+        "isSticky": true
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.100.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3",
+    "ts-loader": "^9.5.2",
+    "webpack": "^5.99.7",
+    "webpack-cli": "^6.0.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}

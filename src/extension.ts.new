@@ -1,0 +1,160 @@
+// The module 'vscode' contains the VS Code extensibility API
+// Import the module and reference it with the alias vscode in your code below
+import * as vscode from 'vscode';
+
+// This method is called when your extension is activated
+// Your extension is activated the very first time the command is executed
+export function activate(context: vscode.ExtensionContext) {
+	// Use the console to output diagnostic information (console.log) and errors (console.error)
+	console.log('ConvertAgent extension is now active!');
+
+	// Register the chat participant
+	const handler: vscode.ChatRequestHandler = async (
+		request: vscode.ChatRequest, 
+		context: vscode.ChatContext, 
+		stream: vscode.ChatResponseStream, 
+		token: vscode.CancellationToken
+	) => {
+		try {
+			const config = vscode.workspace.getConfiguration('convertagent');
+			const customPrompt = config.get<string>('customPrompt') || 
+				`You are an expert TAL programmer tasked with documenting existing TAL code. Analyze the provided code and insert clear, concise inline comments before relevant lines or blocks to explain their purpose. Focus on clarity and accuracy. Do not add comments at the end of lines. Output the complete documented code strictly within a code block. Do not include any text outside this block.`;
+			const preferredModel = config.get<string>('preferredModel') || 'Claude 3.7';
+
+			// Get active editor content
+			let code = '';
+			const editor = vscode.window.activeTextEditor;
+			
+			if (editor) {
+				const document = editor.document;
+				const selection = editor.selection;
+				
+				// Use selected text if there is a selection, otherwise use the entire document
+				if (!selection.isEmpty) {
+					code = document.getText(selection);
+				} else {
+					code = document.getText();
+				}
+			} else {
+				// No editor is active, inform the user
+				stream.markdown('Please open a file to use ConvertAgent.');
+				return;
+			}
+
+			// Remove the @convertagent prefix from the request message
+			let userQuery = request.prompt.replace(/@convertagent\s*/i, '').trim();
+			
+			// Construct the enhanced prompt with the custom prompt and user's code
+			const enhancedPrompt = `${customPrompt}\n\nUser request: ${userQuery}\n\nHere is the code to work with:\n\`\`\`\n${code}\n\`\`\``;
+			
+			// Initialize the messages array with the system prompt
+			const messages = [
+				vscode.LanguageModelChatMessage.User(enhancedPrompt)
+			];
+			
+			try {
+				// Check if user prefers Claude 3.7 or default model
+				if (preferredModel === 'Claude 3.7') {
+					// Try to get Claude 3.7 model
+					const claudeModels = await vscode.lm.selectChatModels({ 
+						family: 'claude', 
+						version: '3.7' 
+					});
+					
+					// If Claude 3.7 is available, use it
+					if (claudeModels.length > 0) {
+						const claudeModel = claudeModels[0];
+						stream.markdown('Using Claude 3.7 model...');
+						
+						const chatResponse = await claudeModel.sendRequest(messages, {}, token);
+						
+						// Stream the response
+						for await (const fragment of chatResponse.text) {
+							stream.markdown(fragment);
+						}
+					} 
+					// Fallback to default model if Claude is not available
+					else if (request.model) {
+						stream.markdown('Claude 3.7 model not available. Falling back to default model...');
+						const chatResponse = await request.model.sendRequest(messages, {}, token);
+						
+						// Stream the response
+						for await (const fragment of chatResponse.text) {
+							stream.markdown(fragment);
+						}
+					} else {
+						stream.markdown('Unable to access any language model. Make sure GitHub Copilot or Claude is properly configured.');
+					}
+				} else {
+					// User prefers default model
+					if (request.model) {
+						stream.markdown('Using default model as configured...');
+						const chatResponse = await request.model.sendRequest(messages, {}, token);
+						
+						// Stream the response
+						for await (const fragment of chatResponse.text) {
+							stream.markdown(fragment);
+						}
+					} else {
+						stream.markdown('Unable to access language model. Make sure GitHub Copilot is properly configured.');
+					}
+				}
+				
+				// Log available models for debugging
+				try {
+					const availableModels = await vscode.lm.selectChatModels();
+					console.log('Available models:', availableModels.map(m => `${m.name} (${m.family} ${m.version})`));
+				} catch (e) {
+					console.error('Error listing models:', e);
+				}
+			} catch (modelError) {
+				console.error('Model error:', modelError);
+				stream.markdown(`Error using language model: ${modelError instanceof Error ? modelError.message : String(modelError)}`);
+			}
+			
+			return;
+		} catch (error) {
+			console.error('ConvertAgent error:', error);
+			stream.markdown(`Error: ${error instanceof Error ? error.message : String(error)}`);
+			return;
+		}
+	};
+	
+	// Create the chat participant
+	const participant = vscode.chat.createChatParticipant('convertagent.convertagent', handler);
+	
+	// Register the command to activate the participant
+	const disposableCommand = vscode.commands.registerCommand('convertagent.activate', async () => {
+		try {
+			// Get active editor content
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) {
+				vscode.window.showErrorMessage('Please open a file to use ConvertAgent.');
+				return;
+			}
+			
+			// Prompt user for query
+			const query = await vscode.window.showInputBox({
+				placeHolder: 'Enter your request for ConvertAgent',
+				prompt: 'What would you like to do with the current file?'
+			});
+			
+			if (!query) {
+				return; // User canceled
+			}
+			
+			// Open chat view and send the query to our participant
+			await vscode.commands.executeCommand('vscode.chat.open');
+			await vscode.commands.executeCommand('vscode.chat.sendRequest', `@convertagent ${query}`);
+		} catch (error) {
+			console.error('ConvertAgent command error:', error);
+			vscode.window.showErrorMessage(`ConvertAgent error: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	});
+	
+	context.subscriptions.push(participant);
+	context.subscriptions.push(disposableCommand);
+}
+
+// This method is called when your extension is deactivated
+export function deactivate() {}
