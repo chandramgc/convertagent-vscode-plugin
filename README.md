@@ -85,7 +85,76 @@ This extension contributes the following settings:
 * `convertagent.customPrompt`: The custom prompt that will be injected before the user's query
 * `convertagent.preferredModel`: The preferred language model to use (GPT-4o or Default)
 
+## Building and Publishing
+
+### Building the Extension
+
+To build the extension and create a `.vsix` file for distribution:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/chandramgc/convertagent-vscode-plugin.git
+   cd convertagent-vscode-plugin
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Compile and package the extension:
+   ```bash
+   npm run vscode:prepublish
+   ```
+
+4. Create the VSIX package:
+   ```bash
+   npx @vscode/vsce package
+   ```
+   This will generate a file named `convertagent-[version].vsix` in the root directory.
+
+### Publishing to VS Code Marketplace
+
+To publish the extension to the VS Code Marketplace:
+
+1. Get a Personal Access Token (PAT) from Azure DevOps:
+   - Go to https://dev.azure.com/
+   - Click on your profile icon in the top right
+   - Select "Personal access tokens"
+   - Create a new token with the "Marketplace (publish)" scope
+
+2. Publish using vsce:
+   ```bash
+   npx @vscode/vsce publish -p <your-PAT>
+   ```
+
+### Publishing to GitHub
+
+1. Create a new release on GitHub:
+   - Go to the repository on GitHub
+   - Click on "Releases" > "Create a new release"
+   - Tag version matching your extension version (e.g., v0.0.4)
+   - Upload the generated `.vsix` file
+   - Publish the release
+
+2. Update the download link in this README to point to your latest release.
+
 ## Release Notes
+
+### 0.0.4
+
+- Removed Claude 3.7 option (not available)
+- Added dedicated support for Copilot's GPT-4o model
+- Improved model selection and fallback mechanisms
+- Enhanced error handling when preferred models are unavailable
+- Updated documentation with building and publishing instructions
+
+### 0.0.3
+
+- Enhanced model selection logic with multiple fallback options
+- Added more robust error handling for model access issues
+- Improved user feedback during model transitions
+- Added comprehensive TROUBLESHOOTING.md guide
 
 ### 0.0.2
 
